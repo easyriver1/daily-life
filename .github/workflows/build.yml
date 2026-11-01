@@ -1,0 +1,36 @@
+name: 重建站点
+
+# 只要 articles/ 或 web/ 有新的提交，就自动跑 build_site.py 并把结果提交回仓库。
+# 这样你只需要上传 .md，网页版会自己更新，不用再手工传 docs/index.html。
+
+on:
+  push:
+    paths:
+      - "articles/**"
+      - "web/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出仓库内容
+        uses: actions/checkout@v4
+
+      - name: 重新生成 docs/
+        run: python3 web/build_site.py
+
+      - name: 提交变更（没有变化就跳过）
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --staged --quiet; then
+            echo "docs/ 没有变化，跳过提交"
+          else
+            git commit -m "自动重建站点"
+            git push
+          fi
