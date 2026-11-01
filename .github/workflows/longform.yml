@@ -1,0 +1,37 @@
+name: 长文上线通知
+
+on:
+  push:
+    paths:
+      - "articles/longform/**"
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出仓库内容
+        uses: actions/checkout@v4
+
+      - name: 取最新一篇长文的标题
+        run: |
+          FILE=$(ls -t articles/longform/*.md | head -n1)
+          TITLE=$(head -n1 "$FILE" | sed 's/^# *//')
+          echo "LF_TITLE=$TITLE" >> $GITHUB_ENV
+          echo "标题：$TITLE"
+
+      - name: 推一条上线提醒
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          LF_URL: "https://easyriver1.github.io/daily-life/"
+          LF_SUMMARY: "正文在网页版「长文」栏目，手机打开即可读。"
+        run: python3 .github/notify_longform.py
+
+      - name: 失败告警
+        if: failure()
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          ALERT_TEXT: "长文上线通知发失败了。去 Actions 页面看「长文上线通知」。"
+        run: python3 .github/alert.py
