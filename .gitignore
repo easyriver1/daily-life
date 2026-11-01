@@ -1,0 +1,3 @@
+# 凭据类文件，永不入库
+*.git-credentials
+.git-credentials

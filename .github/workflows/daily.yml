@@ -21,5 +21,5 @@ jobs:
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           # pushplus 备用：需先完成实名认证（¥3.9 或 ¥10 会员）
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          START_DATE: "2026-11-02"
+          START_DATE: "2026-11-01"
         run: python3 .github/send.py

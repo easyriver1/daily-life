@@ -20,7 +20,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-DEFAULT_START = "2026-11-02"
+DEFAULT_START = "2026-11-01"
 
 
 def today_beijing():

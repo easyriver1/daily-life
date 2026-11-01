@@ -18,7 +18,7 @@ REPO = os.path.dirname(ROOT)
 ARTICLES = os.path.join(REPO, "articles")
 SITE = os.path.join(REPO, "docs")
 
-START_DATE = "2026-11-02"
+START_DATE = "2026-11-01"
 
 
 def parse_article(path):
