@@ -1,110 +1,75 @@
-# 每日一条 · 推送仓库
+# 每日快报 · 发布仓库
 
-这个仓库只做一件事：**每天北京时间 12:30，把 `articles/` 里的一篇文章推到你的手机**。
+每天推送一条短文到微信，并同步到一个可装到手机主屏幕的网页版。
 
-推送走 **Server酱 Turbo**（微信服务号接收，免费每天 5 条，不需要实名和付费）。
+## 内容分三条线
+
+| 栏目 | 目录 | 排期 | 推送时间 |
+|---|---|---|---|
+| 书 | `articles/books/` | 周一 / 周三 / 周五 | 12:30 |
+| 技能 | `articles/skills/` | 周二 / 周四 | 12:30 |
+| 周报 | `articles/weekly/` | 周六 | **08:30** |
+| — | — | 周日不发 | — |
+
+栏目内**按文件名排序**，第 N 次推送取第 N 个文件。文件名建议 `001-hl-标题.md` 这种形式，`hl` 是书名标记，方便一眼看出这篇来自哪本书。
 
 ## 目录结构
 
 ```
 .
-├─ .github/
-│  ├─ send.py                     # 干活的脚本：选出今天的文章并发送
-│  └─ workflows/
-│     ├─ daily.yml                # 每天 12:30 定时推送
-│     └─ build.yml                # 有新的 .md 就自动重建 docs/
 ├─ articles/
-│  ├─ 001-野生蘑菇.md
-│  └─ ...                         # 按文件名排序，第 N 天发第 N 篇
-├─ web/                           # 站点源码（template.html / build_site.py）
-├─ docs/                          # 编译产物 = GitHub Pages 发布目录
+│  ├─ books/      书线
+│  ├─ skills/     技能线
+│  └─ weekly/     周报
+├─ web/           template.html（页面模板）/ build_site.py（编译脚本）
+├─ docs/          编译产物 = GitHub Pages 发布目录（不要手改）
+├─ .github/
+│  ├─ send.py     选栏目 + 选篇 + 推送
+│  ├─ alert.py    失败告警
+│  └─ workflows/
+│     ├─ daily.yml    每天 12:30
+│     ├─ weekly.yml   周六 08:30
+│     └─ build.yml    有新 .md 就自动重建 docs/
 └─ README.md
 ```
 
-## 一次性配置（6 步）
+## 一次性配置
 
-### 1. 拿到 Server酱 SendKey
+1. 在 <https://sct.ftqq.com> 微信扫码，拿 `SCT` 开头的 SendKey，并关注它的服务号（不关注收不到）
+2. 仓库 **Settings → Secrets and variables → Actions** 新建 secret：`SERVERCHAN_SENDKEY`
+3. **Settings → Pages**：Branch `main` + 文件夹 `/docs`
+4. **Actions** 里手动跑一次「每日一条」验证
 
-1. 浏览器打开 <https://sct.ftqq.com>
-2. **手机微信扫码**登录
-3. 进「SendKey」页面，复制 `SCT` 开头的那串
-4. 按页面提示关注它的微信服务号——**不关注收不到消息**
+## 日常怎么加内容
 
-### 2. 先单独测一次推送
+只需要把 `.md` 放进对应栏目目录，推上去即可——`build.yml` 会自动重建站点，不用手改 `docs/`。
 
-打开 PowerShell（`Win+R` → `powershell`），粘贴：
+文章格式：
 
-```powershell
-[Net.ServicePointManager]::SecurityProtocol = 'Tls12'
-$key = "你复制的SCT开头key"
-Invoke-RestMethod -Uri "https://sctapi.ftqq.com/$key.send" -Method Post -Body @{title="link test"; desp="channel ok"}
 ```
+# 标题（第一行，# 后有空格）
 
-返回 `code : 0` 且手机微信收到，才继续往下走。
-
-> 测试内容故意用英文：Windows PowerShell 5.1 发中文表单会乱码。真实推送跑在 GitHub 的 Linux 环境里，中文正常。
-
-### 3. 建 GitHub 仓库
-
-1. 打开 <https://github.com/new>
-2. 仓库名随意，例如 `daily-life`
-3. 公开仓库可直接用 Pages；私有仓库需要 Pro（学生包可免费拿）
-4. 不要勾选任何初始化文件，直接 Create
-
-### 4. 上传这些文件
-
-网页方式（本机没装 git，用这个最简单）：
-
-1. 仓库页点 **Add file → Upload files**
-2. 把 `articles/`、`docs/`、`web/` 三个文件夹和 `README.md` 拖进去 → Commit
-3. 再点 **Add file → Create new file**，文件名填 `.github/send.py`，把本地的 `send.py` 内容粘贴进去
-4. 同样方式建 `.github/workflows/daily.yml`
-
-> 注意：`.github` 开头的文件夹在网页上没法直接拖拽，必须用「Create new file」并在文件名里打斜杠来创建。
-
-### 5. 配置 secret
-
-1. 仓库 **Settings → Secrets and variables → Actions**
-2. 点 **New repository secret**
-3. Name 填 `SERVERCHAN_SENDKEY`，Secret 填你的 SendKey
-4. 保存
-
-### 6. 手动跑一次
-
-仓库 **Actions** 标签页 → 左侧「每日一条」→ 右侧 **Run workflow** → 绿色按钮。
-
-约 30 秒后刷新，应看到绿色对勾，手机收到第 1 篇。
-
-### 7. 开启网页版（可选）
-
-**Settings → Pages** → Source 选 `Deploy from a branch` → Branch 选 `main` + 文件夹选 **`/docs`** → Save。
-
-一两分钟后得到 `https://<用户名>.github.io/daily-life/`，手机浏览器打开后可「添加到主屏幕」，全屏无地址栏、离线可读。
+正文段落，空行分隔。**加粗**是关键数字。
 
 ---
 
-## 已知限制
+<sub>出处：第 X 节第 Y 条 · 证据 A · 来源</sub>
+```
 
-| 项 | 说明 |
+## 三个保险
+
+| 保险 | 行为 |
 |---|---|
-| 延迟 | GitHub 定时任务常延迟 5–30 分钟，12:30 的推送可能 12:45 才到 |
-| 自动停用 | 仓库连续 **60 天没有提交**，GitHub 会自动停用定时任务。届时随便手动跑一次即可恢复 |
-| 免费额度 | Server酱 免费会员每天 5 条，本项目每天只用 1 条 |
-| 消息格式 | Server酱 的正文只支持 **Markdown**，不支持 HTML。`send.py` 已按 Markdown 生成 |
-| 保留时间 | Server酱 免费版服务端只保留 1 天；手机上收到后内容留在微信里，不受影响 |
-| 内容上限 | 每篇 300–500 字，远低于任何长度限制 |
+| 库存预警 | 该栏目剩余不足 3 篇时，推送末尾自动提醒 |
+| 断更保护 | 该栏目稿件用完时，**不发旧文**，改发一条「稿件已用完」提醒 |
+| 失败告警 | 工作流失败时自动推一条微信告警，不会静默失败 |
 
-## 备用通道：pushplus
+## 手动排查
 
-如果哪天 Server酱 不可用，`send.py` 里保留了 pushplus 分支：只要把 secret 名改成 `PUSHPLUS_TOKEN` 并删掉 `SERVERCHAN_SENDKEY`，脚本会自动切过去。
+```bash
+# 只看今天会发什么，不发出去
+DRY_RUN=1 python3 .github/send.py
 
-注意 pushplus **现在要求完成实名认证**（第三方核验，¥3.9 一次性，或 ¥10 开会员），未实名时接口返回 `code 905`，发不出任何消息。
-
-## 改内容
-
-- **加文章：只需要往 `articles/` 里传那一个 `.md` 文件**，`build.yml` 会自动重跑 `build_site.py` 并把 `docs/` 提交回仓库（约 1 分钟）。不用再手工传 `index.html`
-- 文件名排序即推送顺序：`002-xxx.md` 是第 2 天、`003-xxx.md` 是第 3 天
-- 每篇标题取自文件第一行（`# ` 开头的行），正文是其余全部，末尾 `<sub>…</sub>` 是出处角标
-- 改起始日期：编辑 `daily.yml` 里的 `START_DATE`，同时改 `web/build_site.py` 里的 `START_DATE`（两处必须一致）
-- 想重发某一天：把 `send.py` 的 `FORCE_INDEX` 环境变量设成篇号
-- 想只预览不发送：设置 `DRY_RUN=1`，脚本会打印将要发送的标题、字数、出处和完整正文
+# 假装今天是某个日期（验证排期）
+DRY_RUN=1 FORCE_DATE=2026-11-07 python3 .github/send.py
+```

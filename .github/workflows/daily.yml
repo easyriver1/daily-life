@@ -22,4 +22,12 @@ jobs:
           # pushplus 备用：需先完成实名认证（¥3.9 或 ¥10 会员）
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           START_DATE: "2026-11-01"
+          MODE: daily
         run: python3 .github/send.py
+
+      - name: 失败告警
+        if: failure()
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: python3 .github/alert.py

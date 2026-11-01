@@ -1,0 +1,30 @@
+name: 周六周报
+
+on:
+  schedule:
+    # 00:30 UTC = 北京时间 08:30，只跑周六
+    - cron: "30 0 * * 6"
+  workflow_dispatch:
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出仓库内容
+        uses: actions/checkout@v4
+
+      - name: 推送周报
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          START_DATE: "2026-11-01"
+          MODE: weekly
+        run: python3 .github/send.py
+
+      - name: 失败告警
+        if: failure()
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          ALERT_TEXT: "周六周报的自动推送失败了。去 Actions 页面看「周六周报」这个工作流。"
+        run: python3 .github/alert.py

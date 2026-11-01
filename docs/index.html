@@ -27,16 +27,23 @@
   }
   .wrap{max-width:640px;margin:0 auto;padding:0 20px}
   header{
-    position:sticky;top:0;z-index:10;background:rgba(17,19,21,.94);
+    position:sticky;top:0;z-index:10;background:rgba(17,19,21,.96);
     backdrop-filter:saturate(180%) blur(12px);
     border-bottom:1px solid var(--line);
-    padding:14px 0 12px;
+    padding:12px 0 0;
   }
   .brand{display:flex;align-items:baseline;gap:9px}
   .brand h1{font-size:16px;margin:0;letter-spacing:.5px;font-weight:600}
   .brand .meta{font-size:11px;color:var(--dim)}
-  .date{margin-top:8px;font-size:12px;color:var(--accent);letter-spacing:1px}
-  article{padding:24px 0 10px}
+  .tabs{display:flex;gap:6px;margin-top:10px}
+  .tab{
+    flex:1;text-align:center;padding:8px 0 10px;font-size:14px;
+    color:var(--dim);border:0;background:transparent;font-family:inherit;
+    border-bottom:2px solid transparent;cursor:pointer;
+  }
+  .tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+  .date{padding:16px 0 0;font-size:12px;color:var(--accent);letter-spacing:1px}
+  article{padding:14px 0 10px}
   article h2{font-size:23px;line-height:1.45;margin:0 0 20px;letter-spacing:.3px;font-weight:600}
   article p{margin:0 0 18px}
   article strong{color:#fff;font-weight:600}
@@ -44,7 +51,7 @@
     margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);
     font-size:12px;color:var(--dim);line-height:1.7;
   }
-  .history{padding:30px 0 56px}
+  .history{padding:22px 0 56px}
   .history h3{font-size:11px;color:var(--dim);letter-spacing:2px;margin:0 0 12px;font-weight:500}
   .item{
     display:flex;gap:12px;align-items:flex-start;
@@ -52,20 +59,14 @@
     border-radius:12px;cursor:pointer;border:1px solid transparent;
   }
   .item:active{border-color:var(--accent)}
-  .item .n{
-    flex:0 0 auto;font-size:11px;color:var(--dim);
-    min-width:30px;padding-top:3px;letter-spacing:.5px;
-  }
-  .item .t{font-size:15px;line-height:1.55}
+  .item .n{flex:0 0 auto;font-size:11px;color:var(--dim);min-width:26px;padding-top:3px}
+  .item .t{font-size:15px;line-height:1.55;flex:1}
   .item .t small{display:block;font-size:11px;color:var(--dim);margin-top:4px}
-  .back{
-    display:none;width:100%;margin:0 0 18px;padding:11px;border-radius:11px;
-    background:transparent;color:var(--accent);border:1px solid var(--line);
-    font-size:13px;font-family:inherit;
-  }
-  .back.show{display:block}
-  footer{text-align:center;font-size:11px;color:#4e5459;padding:0 0 34px;line-height:1.8}
-  .empty{padding:40px 0;color:var(--dim);font-size:14px;text-align:center}
+  .item.read .t{color:#8b9096}
+  .dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:8px;opacity:0}
+  .item.unread .dot{opacity:1}
+  .empty{padding:30px 0;color:var(--dim);font-size:14px;text-align:center}
+  footer{text-align:center;font-size:11px;color:#4e5459;padding:0 0 34px;line-height:1.9}
 </style>
 </head>
 <body>
@@ -73,120 +74,178 @@
   <header>
     <div class="brand">
       <h1>每日快报</h1>
-      <span class="meta">《如何更好地生活》</span>
+      <span class="meta" id="colmeta"></span>
     </div>
-    <div class="date" id="dateline">—</div>
+    <div class="tabs" id="tabs"></div>
   </header>
 
-  <button class="back" id="back">← 回到今天</button>
+  <div class="date" id="dateline">—</div>
   <article id="post"></article>
 
   <section class="history">
-    <h3>往期</h3>
+    <h3 id="historytitle">往期</h3>
     <div id="list"></div>
   </section>
 
   <footer>
     <div id="counter"></div>
     <div id="pwa"></div>
-    <div>内容源自 eternity4719《如何更好地生活》</div>
+    <div>内容源自公开书籍与公开课程，每个数字都可回溯</div>
   </footer>
 </div>
 
 <script>
-const ARTICLES = [{"title": "室友带回来一袋「山上捡的」蘑菇，我劝你别吃", "html": "<p>国庆回校，室友拎来一袋干货：「我妈在后山捡的，晒干了，特别香。」</p>\n<p>我没法判断那袋东西有没有毒——因为<strong>没有任何人能靠肉眼判断</strong>。</p>\n<p>中国疾控中心 2025 年调查了 <strong>828 起</strong>蘑菇中毒事件，<strong>2165 人</strong>中招，<strong>13 人</strong>死亡。这已是六年来最低：2019 到 2024 年每年 276 到 676 起，病死率 0.87% 到 2.86%。</p>\n<p>会毒人的蘑菇还在变多：2025 年鉴定出 <strong>138 种</strong>，其中 <strong>34 种</strong>是国内首次记录。「祖祖辈辈都这么吃」这句话，可能已经过期。</p>\n<p>那些辨别法呢？银针试毒——蘑菇毒素不含硫，银针变黑靠的恰恰是硫，跟有毒没毒无关。虫子吃过就没毒——剧毒蘑菇成熟后照样被虫啃。颜色鲜艳才有毒——有没有毒和颜色无关。高温油炸能去毒——不靠谱。</p>\n<p>中国疾控中心的结论是：「目前没有简单易行、快速有效的识别蘑菇是否有毒的方法。」</p>\n<p>所以最省事的处理就是别吃。已经吃了、觉得不对劲，立即去医院，别扛着也别自己催吐，把剩下的蘑菇或照片带上——中毒分好几种类型，医生认出是哪一种才好对症。</p>", "source": "第 1 节第 5 条 · 证据 A · 中国疾控中心 China CDC Weekly (2026)", "file": "001-野生蘑菇.md"}, {"title": "比熬夜更伤的是：今晚一点睡，周末中午起", "html": "<p>室友的作息表是这样的：周一到周五凌晨一点半睡、七点半起，周末补到中午十一点。</p>\n<p>他觉得自己没熬夜——工作日欠的觉，周末一次性还清了。</p>\n<p>但身体不这么算。英国生物银行跟踪了约 6.1 万个戴腕表的人，按作息规律程度分成五档。较规律的那四档，比最不规律的那一档，死亡风险低 <strong>20% 到 48%</strong>。研究结论很直接：<strong>作息规不规律，比睡多久更能预测死亡</strong>。</p>\n<p>还有一项追踪了 51,562 人的研究，记录睡眠时刻后发现：工作日和周末的睡眠中点如果差到 <strong>2 小时以上</strong>——这叫「社会时差」——心血管病风险高约 <strong>30%</strong>。哪怕每天睡够 7 小时，这个关联照样存在。</p>\n<p>那到底睡几个小时？16 项跟踪研究合起来算，138 万人、11.3 万例死亡，结论是：<strong>7 小时那一档风险最低</strong>。少于 7 小时，每少 1 小时风险高约 6%；多于 7 小时，每多 1 小时高约 13%。</p>\n<p>这里有个容易搞反的地方：睡得长的人风险高，多半是因果颠倒了——是抑郁、慢性病、睡眠呼吸暂停让人睡得多，不是睡得多让人生病。<strong>没有人建议你少睡。</strong></p>\n<p>所以真正要改的只有两件：睡够 7 小时，把上床和起床的点固定住。</p>\n<p>不是要你早睡，是要你<strong>别在几个时区之间来回跳</strong>——周五两点、周日两点、周一十一点，身体每一次都要重调。</p>", "source": "第 2 节第 13 条 · 证据 A（作息部分单独看为 B）· Cappuccio 等 (2010) Sleep 汇总分析", "file": "002-睡够七小时.md"}];
-const START = "2026-11-01";
+const DATA = {"start": "2026-11-01", "schedule": ["books", "skills", "books", "skills", "books", "weekly", null], "columns": {"books": [{"title": "室友带回来一袋「山上捡的」蘑菇，我劝你别吃", "html": "<p>国庆回校，室友拎来一袋干货：「我妈在后山捡的，晒干了，特别香。」</p>\n<p>我没法判断那袋东西有没有毒——因为<strong>没有任何人能靠肉眼判断</strong>。</p>\n<p>中国疾控中心 2025 年调查了 <strong>828 起</strong>蘑菇中毒事件，<strong>2165 人</strong>中招，<strong>13 人</strong>死亡。这已是六年来最低：2019 到 2024 年每年 276 到 676 起，病死率 0.87% 到 2.86%。</p>\n<p>会毒人的蘑菇还在变多：2025 年鉴定出 <strong>138 种</strong>，其中 <strong>34 种</strong>是国内首次记录。「祖祖辈辈都这么吃」这句话，可能已经过期。</p>\n<p>那些辨别法呢？银针试毒——蘑菇毒素不含硫，银针变黑靠的恰恰是硫，跟有毒没毒无关。虫子吃过就没毒——剧毒蘑菇成熟后照样被虫啃。颜色鲜艳才有毒——有没有毒和颜色无关。高温油炸能去毒——不靠谱。</p>\n<p>中国疾控中心的结论是：「目前没有简单易行、快速有效的识别蘑菇是否有毒的方法。」</p>\n<p>所以最省事的处理就是别吃。已经吃了、觉得不对劲，立即去医院，别扛着也别自己催吐，把剩下的蘑菇或照片带上——中毒分好几种类型，医生认出是哪一种才好对症。</p>", "source": "第 1 节第 5 条 · 证据 A · 中国疾控中心 China CDC Weekly (2026)", "file": "001-hl-野生蘑菇.md"}, {"title": "比熬夜更伤的是：今晚一点睡，周末中午起", "html": "<p>室友的作息表是这样的：周一到周五凌晨一点半睡、七点半起，周末补到中午十一点。</p>\n<p>他觉得自己没熬夜——工作日欠的觉，周末一次性还清了。</p>\n<p>但身体不这么算。英国生物银行跟踪了约 6.1 万个戴腕表的人，按作息规律程度分成五档。较规律的那四档，比最不规律的那一档，死亡风险低 <strong>20% 到 48%</strong>。研究结论很直接：<strong>作息规不规律，比睡多久更能预测死亡</strong>。</p>\n<p>还有一项追踪了 51,562 人的研究，记录睡眠时刻后发现：工作日和周末的睡眠中点如果差到 <strong>2 小时以上</strong>——这叫「社会时差」——心血管病风险高约 <strong>30%</strong>。哪怕每天睡够 7 小时，这个关联照样存在。</p>\n<p>那到底睡几个小时？16 项跟踪研究合起来算，138 万人、11.3 万例死亡，结论是：<strong>7 小时那一档风险最低</strong>。少于 7 小时，每少 1 小时风险高约 6%；多于 7 小时，每多 1 小时高约 13%。</p>\n<p>这里有个容易搞反的地方：睡得长的人风险高，多半是因果颠倒了——是抑郁、慢性病、睡眠呼吸暂停让人睡得多，不是睡得多让人生病。<strong>没有人建议你少睡。</strong></p>\n<p>所以真正要改的只有两件：睡够 7 小时，把上床和起床的点固定住。</p>\n<p>不是要你早睡，是要你<strong>别在几个时区之间来回跳</strong>——周五两点、周日两点、周一十一点，身体每一次都要重调。</p>", "source": "第 2 节第 13 条 · 证据 A（作息部分单独看为 B）· Cappuccio 等 (2010) Sleep 汇总分析", "file": "002-hl-睡够七小时.md"}], "skills": [], "weekly": []}, "meta": {"books": {"name": "书", "desc": "周一 / 周三 / 周五"}, "skills": {"name": "技能", "desc": "周二 / 周四"}, "weekly": {"name": "周报", "desc": "周六"}}};
 
+const fmt = d => { const p = n => String(n).padStart(2,'0'); return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}`; };
 const DAY = 86400000;
-const W = ['日','一','二','三','四','五','六'];
+const W = ['一','二','三','四','五','六','日'];
 
-function beijingNow(){
-  return new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 8*3600000);
+function today() {
+  const n = new Date();
+  return new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()));
 }
-function todayIndex(){
-  const now = beijingNow();
-  const start = new Date(START + "T00:00:00+08:00");
-  const d0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const s0 = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  let i = Math.floor((d0 - s0) / DAY) + 1;
-  if (i < 1) i = 1;
-  if (i > ARTICLES.length) i = ARTICLES.length;
-  return i;
+function bjToday() {
+  const n = new Date(Date.now() + n0() + 8*3600000);
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
 }
-function fmt(n){
-  const d = new Date(new Date(START + "T00:00:00+08:00").getTime() + (n-1)*DAY);
-  const dd = new Date(d.getTime() + d.getTimezoneOffset()*60000 + 8*3600000);
-  return `${dd.getUTCFullYear()} 年 ${dd.getUTCMonth()+1} 月 ${dd.getUTCDate()} 日 · 星期${W[dd.getUTCDay()]}`;
-}
+function n0(){ return new Date().getTimezoneOffset()*60000; }
 
-let shown = 0;
-
-function render(i){
-  shown = i;
-  const a = ARTICLES[i-1];
-  if (!a) {
-    document.getElementById('post').innerHTML = '<div class="empty">还没有内容</div>';
-    return;
+function dateAt(i){
+  return new Date(Date.parse(DATA.start + "T00:00:00Z") + i*DAY);
+}
+function weekdayOf(d){ return (d.getUTCDay() + 6) % 7; }   // 0=周一
+function todayIdx(){
+  return Math.round((bjToday() - Date.parse(DATA.start + "T00:00:00Z")) / DAY);
+}
+function nthFor(col, upto){
+  let n = 0;
+  for (let i = 0; i <= upto; i++){
+    if (DATA.schedule[weekdayOf(dateAt(i))] === col) n++;
   }
-  const t = todayIndex();
-  document.getElementById('dateline').textContent = (i === t && i >= todayIndex()) ? fmt(i) : `第 ${i} 篇 · ${fmt(i)}`;
-  document.getElementById('post').innerHTML =
-    `<h2>${a.title}</h2>${a.html}` +
-    (a.source ? `<div class="source">${a.source}</div>` : '');
-  document.getElementById('back').classList.toggle('show', i !== todayIndex());
-  window.scrollTo({top:0,behavior:'instant'});
+  return n;
+}
+function dateOfNth(col, n){
+  let c = 0;
+  for (let i = 0; ; i++){
+    if (DATA.schedule[weekdayOf(dateAt(i))] === col){
+      c++;
+      if (c === n) return dateAt(i);
+    }
+    if (i > 5000) return null;
+  }
 }
 
-function renderList(){
-  const t = todayIndex();
-  const box = document.getElementById('list');
-  let html = '';
-  for (let i = ARTICLES.length; i >= 1; i--){
-    if (i === t) continue;
-    const a = ARTICLES[i-1];
-    html += `<div class="item" data-i="${i}">
-      <div class="n">${String(i).padStart(2,'0')}</div>
-      <div class="t">${a.title}<small>${fmt(i)}</small></div>
-    </div>`;
-  }
-  box.innerHTML = html || '<div class="empty">还没有往期</div>';
-  box.querySelectorAll('.item').forEach(el => {
-    el.addEventListener('click', () => {
-      render(+el.dataset.i);
-      history.pushState({i:+el.dataset.i}, '', '#'+(+el.dataset.i));
-    });
+/* ---- 已读标记 ---- */
+const readKey = f => 'read:' + f;
+const isRead = f => localStorage.getItem(readKey(f)) === '1';
+const markRead = f => localStorage.setItem(readKey(f), '1');
+
+let cur = localStorage.getItem('col') || 'books';
+if (!DATA.columns[cur]) cur = Object.keys(DATA.columns)[0];
+
+function renderTabs(){
+  const box = document.getElementById('tabs');
+  box.innerHTML = Object.keys(DATA.columns).map(k =>
+    `<button class="tab${k===cur?' on':''}" data-k="${k}">${DATA.meta[k].name}</button>`
+  ).join('');
+  box.querySelectorAll('.tab').forEach(el => el.onclick = () => {
+    cur = el.dataset.k;
+    localStorage.setItem('col', cur);
+    renderTabs(); renderCol();
   });
 }
 
-document.getElementById('back').addEventListener('click', () => {
-  render(todayIndex());
-  history.pushState({}, '', location.pathname);
-});
+function renderCol(){
+  const list = DATA.columns[cur] || [];
+  document.getElementById('colmeta').textContent = DATA.meta[cur].desc;
 
-window.addEventListener('popstate', e => {
-  render(e.state && e.state.i ? e.state.i : todayIndex());
-});
+  const t = todayIdx();
+  let idx = nthFor(cur, t);
+  if (idx < 1) idx = 1;
+  const isToday = DATA.schedule[weekdayOf(bjToday())] === cur;
 
-const startIndex = (function(){
-  const m = location.hash.match(/^#(\d+)$/);
-  if (m) {
-    const n = +m[1];
-    if (n >= 1 && n <= ARTICLES.length) return n;
+  const post = document.getElementById('post');
+  if (!list.length){
+    post.innerHTML = '<div class="empty">这一栏还没有内容</div>';
+    document.getElementById('dateline').textContent = DATA.meta[cur].desc;
+    document.getElementById('list').innerHTML = '';
+    document.getElementById('historytitle').textContent = '往期';
+    return;
   }
-  return todayIndex();
-})();
 
-render(startIndex);
-renderList();
-document.getElementById('counter').textContent = `共 ${ARTICLES.length} 篇 · 每天中午 12:30 更新`;
+  const show = Math.min(idx, list.length);
+  const a = list[show - 1];
+  markRead(a.file);
+
+  const d = dateOfNth(cur, show);
+  const wd = d ? '星期' + W[weekdayOf(d)] : '';
+  const dated = d ? `${d.getUTCFullYear()} 年 ${d.getUTCMonth()+1} 月 ${d.getUTCDate()} 日 · ${wd}` : '';
+  document.getElementById('dateline').textContent =
+    (isToday && show === idx) ? dated : `第 ${show} 篇 · ${dated}`;
+
+  post.innerHTML = `<h2>${a.title}</h2>${a.html}` +
+    (a.source ? `<div class="source">${a.source}</div>` : '');
+
+  // 往期
+  const rows = [];
+  for (let i = list.length; i >= 1; i--){
+    if (i === show) continue;
+    const it = list[i-1];
+    const dd = dateOfNth(cur, i);
+    const sub = dd ? `${dd.getUTCFullYear()}-${String(dd.getUTCMonth()+1).padStart(2,'0')}-${String(dd.getUTCDate()).padStart(2,'0')}` : '';
+    rows.push(
+      `<div class="item ${isRead(it.file)?'read':'unread'}" data-i="${i}">
+         <div class="n">${String(i).padStart(2,'0')}</div>
+         <div class="t">${it.title}<small>${sub}</small></div>
+         <div class="dot"></div>
+       </div>`
+    );
+  }
+  document.getElementById('historytitle').textContent = `${DATA.meta[cur].name} · 往期`;
+  document.getElementById('list').innerHTML = rows.join('') || '<div class="empty">还没有往期</div>';
+  document.getElementById('list').querySelectorAll('.item').forEach(el => {
+    el.onclick = () => openItem(+el.dataset.i);
+  });
+
+  let readCount = list.filter(x => isRead(x.file)).length;
+  document.getElementById('counter').textContent =
+    `${DATA.meta[cur].name}：共 ${list.length} 篇 · 已读 ${readCount} 篇 · 周一三五书 / 周二四技能 / 周六周报`;
+}
+
+function updateCounter(){
+  const list = DATA.columns[cur] || [];
+  const readCount = list.filter(x => isRead(x.file)).length;
+  document.getElementById('counter').textContent =
+    `${DATA.meta[cur].name}：共 ${list.length} 篇 · 已读 ${readCount} 篇 · 周一三五书 / 周二四技能 / 周六周报`;
+}
+
+function openItem(i){
+  const list = DATA.columns[cur] || [];
+  const a = list[i-1];
+  if (!a) return;
+  markRead(a.file);
+  const d = dateOfNth(cur, i);
+  const wd = d ? '星期' + W[weekdayOf(d)] : '';
+  document.getElementById('dateline').textContent = d
+    ? `第 ${i} 篇 · ${d.getUTCFullYear()} 年 ${d.getUTCMonth()+1} 月 ${d.getUTCDate()} 日 · ${wd}`
+    : `第 ${i} 篇`;
+  document.getElementById('post').innerHTML =
+    `<h2>${a.title}</h2>${a.html}` + (a.source ? `<div class="source">${a.source}</div>` : '');
+  window.scrollTo({top:0, behavior:'instant'});
+  const el = document.querySelector('.item[data-i="' + i + '"]');
+  if (el) { el.classList.remove('unread'); el.classList.add('read'); }
+  updateCounter();
+}
+
+renderTabs();
+renderCol();
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('sw.js')
-    .then(() => {
-      const el = document.getElementById('pwa');
-      if (el) el.textContent = '离线可读 · 可装到主屏幕';
-    })
-    .catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(() => {
+    const el = document.getElementById('pwa');
+    if (el) el.textContent = '离线可读 · 可装到主屏幕';
+  }).catch(() => {});
 } else {
   const el = document.getElementById('pwa');
   if (el) el.textContent = '仅在线（要离线与安装需 HTTPS 站点）';
