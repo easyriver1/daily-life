@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111315">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>每日快报</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --bg:#111315; --card:#191c1f; --ink:#e8e6e3; --dim:#8b9096;
+    --accent:#c9a227; --line:#262a2e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    line-height:1.85;font-size:17px;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    overscroll-behavior-y:contain;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 20px}
+  header{
+    position:sticky;top:0;z-index:10;background:rgba(17,19,21,.94);
+    backdrop-filter:saturate(180%) blur(12px);
+    border-bottom:1px solid var(--line);
+    padding:14px 0 12px;
+  }
+  .brand{display:flex;align-items:baseline;gap:9px}
+  .brand h1{font-size:16px;margin:0;letter-spacing:.5px;font-weight:600}
+  .brand .meta{font-size:11px;color:var(--dim)}
+  .date{margin-top:8px;font-size:12px;color:var(--accent);letter-spacing:1px}
+  article{padding:24px 0 10px}
+  article h2{font-size:23px;line-height:1.45;margin:0 0 20px;letter-spacing:.3px;font-weight:600}
+  article p{margin:0 0 18px}
+  article strong{color:#fff;font-weight:600}
+  .source{
+    margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--dim);line-height:1.7;
+  }
+  .history{padding:30px 0 56px}
+  .history h3{font-size:11px;color:var(--dim);letter-spacing:2px;margin:0 0 12px;font-weight:500}
+  .item{
+    display:flex;gap:12px;align-items:flex-start;
+    padding:14px 15px;margin-bottom:8px;background:var(--card);
+    border-radius:12px;cursor:pointer;border:1px solid transparent;
+  }
+  .item:active{border-color:var(--accent)}
+  .item .n{
+    flex:0 0 auto;font-size:11px;color:var(--dim);
+    min-width:30px;padding-top:3px;letter-spacing:.5px;
+  }
+  .item .t{font-size:15px;line-height:1.55}
+  .item .t small{display:block;font-size:11px;color:var(--dim);margin-top:4px}
+  .back{
+    display:none;width:100%;margin:0 0 18px;padding:11px;border-radius:11px;
+    background:transparent;color:var(--accent);border:1px solid var(--line);
+    font-size:13px;font-family:inherit;
+  }
+  .back.show{display:block}
+  footer{text-align:center;font-size:11px;color:#4e5459;padding:0 0 34px;line-height:1.8}
+  .empty{padding:40px 0;color:var(--dim);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>每日快报</h1>
+      <span class="meta">《如何更好地生活》</span>
+    </div>
+    <div class="date" id="dateline">—</div>
+  </header>
+
+  <button class="back" id="back">← 回到今天</button>
+  <article id="post"></article>
+
+  <section class="history">
+    <h3>往期</h3>
+    <div id="list"></div>
+  </section>
+
+  <footer>
+    <div id="counter"></div>
+    <div id="pwa"></div>
+    <div>内容源自 eternity4719《如何更好地生活》</div>
+  </footer>
+</div>
+
+<script>
+const ARTICLES = __ARTICLES__;
+const START = "__START_DATE__";
+
+const DAY = 86400000;
+const W = ['日','一','二','三','四','五','六'];
+
+function beijingNow(){
+  return new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 8*3600000);
+}
+function todayIndex(){
+  const now = beijingNow();
+  const start = new Date(START + "T00:00:00+08:00");
+  const d0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const s0 = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  let i = Math.floor((d0 - s0) / DAY) + 1;
+  if (i < 1) i = 1;
+  if (i > ARTICLES.length) i = ARTICLES.length;
+  return i;
+}
+function fmt(n){
+  const d = new Date(new Date(START + "T00:00:00+08:00").getTime() + (n-1)*DAY);
+  const dd = new Date(d.getTime() + d.getTimezoneOffset()*60000 + 8*3600000);
+  return `${dd.getUTCFullYear()} 年 ${dd.getUTCMonth()+1} 月 ${dd.getUTCDate()} 日 · 星期${W[dd.getUTCDay()]}`;
+}
+
+let shown = 0;
+
+function render(i){
+  shown = i;
+  const a = ARTICLES[i-1];
+  if (!a) {
+    document.getElementById('post').innerHTML = '<div class="empty">还没有内容</div>';
+    return;
+  }
+  const t = todayIndex();
+  document.getElementById('dateline').textContent = (i === t && i >= todayIndex()) ? fmt(i) : `第 ${i} 篇 · ${fmt(i)}`;
+  document.getElementById('post').innerHTML =
+    `<h2>${a.title}</h2>${a.html}` +
+    (a.source ? `<div class="source">${a.source}</div>` : '');
+  document.getElementById('back').classList.toggle('show', i !== todayIndex());
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function renderList(){
+  const t = todayIndex();
+  const box = document.getElementById('list');
+  let html = '';
+  for (let i = ARTICLES.length; i >= 1; i--){
+    if (i === t) continue;
+    const a = ARTICLES[i-1];
+    html += `<div class="item" data-i="${i}">
+      <div class="n">${String(i).padStart(2,'0')}</div>
+      <div class="t">${a.title}<small>${fmt(i)}</small></div>
+    </div>`;
+  }
+  box.innerHTML = html || '<div class="empty">还没有往期</div>';
+  box.querySelectorAll('.item').forEach(el => {
+    el.addEventListener('click', () => {
+      render(+el.dataset.i);
+      history.pushState({i:+el.dataset.i}, '', '#'+(+el.dataset.i));
+    });
+  });
+}
+
+document.getElementById('back').addEventListener('click', () => {
+  render(todayIndex());
+  history.pushState({}, '', location.pathname);
+});
+
+window.addEventListener('popstate', e => {
+  render(e.state && e.state.i ? e.state.i : todayIndex());
+});
+
+const startIndex = (function(){
+  const m = location.hash.match(/^#(\d+)$/);
+  if (m) {
+    const n = +m[1];
+    if (n >= 1 && n <= ARTICLES.length) return n;
+  }
+  return todayIndex();
+})();
+
+render(startIndex);
+renderList();
+document.getElementById('counter').textContent = `共 ${ARTICLES.length} 篇 · 每天中午 12:30 更新`;
+
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('sw.js')
+    .then(() => {
+      const el = document.getElementById('pwa');
+      if (el) el.textContent = '离线可读 · 可装到主屏幕';
+    })
+    .catch(() => {});
+} else {
+  const el = document.getElementById('pwa');
+  if (el) el.textContent = '仅在线（要离线与安装需 HTTPS 站点）';
+}
+</script>
+</body>
+</html>
