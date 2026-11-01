@@ -160,10 +160,13 @@ function renderCol(){
   const list = DATA.columns[cur] || [];
   document.getElementById('colmeta').textContent = DATA.meta[cur].desc;
 
-  const t = todayIdx();
-  let idx = nthFor(cur, t);
-  if (idx < 1) idx = 1;
-  const isToday = DATA.schedule[weekdayOf(bjToday())] === cur;
+  const scheduled = [DATA.schedule || []].flat().includes(cur);
+  let idx = 1, isToday = false;
+  if (scheduled){
+    const t = todayIdx();
+    idx = Math.max(1, nthFor(cur, t));
+    isToday = DATA.schedule[weekdayOf(bjToday())] === cur;
+  }
 
   const post = document.getElementById('post');
   if (!list.length){
@@ -174,15 +177,19 @@ function renderCol(){
     return;
   }
 
-  const show = Math.min(idx, list.length);
+  const show = scheduled ? Math.min(idx, list.length) : list.length;
   const a = list[show - 1];
   markRead(a.file);
 
-  const d = dateOfNth(cur, show);
-  const wd = d ? '星期' + W[weekdayOf(d)] : '';
-  const dated = d ? `${d.getUTCFullYear()} 年 ${d.getUTCMonth()+1} 月 ${d.getUTCDate()} 日 · ${wd}` : '';
-  document.getElementById('dateline').textContent =
-    (isToday && show === idx) ? dated : `第 ${show} 篇 · ${dated}`;
+  if (scheduled){
+    const d = dateOfNth(cur, show);
+    const wd = d ? '星期' + W[weekdayOf(d)] : '';
+    const dated = d ? `${d.getUTCFullYear()} 年 ${d.getUTCMonth()+1} 月 ${d.getUTCDate()} 日 · ${wd}` : '';
+    document.getElementById('dateline').textContent =
+      (isToday && show === idx) ? dated : `第 ${show} 篇 · ${dated}`;
+  } else {
+    document.getElementById('dateline').textContent = `共 ${list.length} 篇 · 按发布顺序排列`;
+  }
 
   post.innerHTML = `<h2>${a.title}</h2>${a.html}` +
     (a.source ? `<div class="source">${a.source}</div>` : '');
@@ -192,8 +199,8 @@ function renderCol(){
   for (let i = list.length; i >= 1; i--){
     if (i === show) continue;
     const it = list[i-1];
-    const dd = dateOfNth(cur, i);
-    const sub = dd ? `${dd.getUTCFullYear()}-${String(dd.getUTCMonth()+1).padStart(2,'0')}-${String(dd.getUTCDate()).padStart(2,'0')}` : '';
+    const dd = scheduled ? dateOfNth(cur, i) : null;
+    const sub = dd ? `${dd.getUTCFullYear()} 年 ${dd.getUTCMonth()+1} 月 ${dd.getUTCDate()} 日` : '';
     rows.push(
       `<div class="item ${isRead(it.file)?'read':'unread'}" data-i="${i}">
          <div class="n">${String(i).padStart(2,'0')}</div>
@@ -208,16 +215,15 @@ function renderCol(){
     el.onclick = () => openItem(+el.dataset.i);
   });
 
-  let readCount = list.filter(x => isRead(x.file)).length;
-  document.getElementById('counter').textContent =
-    `${DATA.meta[cur].name}：共 ${list.length} 篇 · 已读 ${readCount} 篇 · 周一三五书 / 周二四技能 / 周六周报`;
+  updateCounter();
 }
 
 function updateCounter(){
   const list = DATA.columns[cur] || [];
   const readCount = list.filter(x => isRead(x.file)).length;
+  const hint = cur === 'longform' ? '按需更新 · 不占排期' : '周一三五书 / 周二四技能 / 周六周报';
   document.getElementById('counter').textContent =
-    `${DATA.meta[cur].name}：共 ${list.length} 篇 · 已读 ${readCount} 篇 · 周一三五书 / 周二四技能 / 周六周报`;
+    `${DATA.meta[cur].name}：共 ${list.length} 篇 · 已读 ${readCount} 篇 · ${hint}`;
 }
 
 function openItem(i){
@@ -225,7 +231,8 @@ function openItem(i){
   const a = list[i-1];
   if (!a) return;
   markRead(a.file);
-  const d = dateOfNth(cur, i);
+  const scheduled = [DATA.schedule || []].flat().includes(cur);
+  const d = scheduled ? dateOfNth(cur, i) : null;
   const wd = d ? '星期' + W[weekdayOf(d)] : '';
   document.getElementById('dateline').textContent = d
     ? `第 ${i} 篇 · ${d.getUTCFullYear()} 年 ${d.getUTCMonth()+1} 月 ${d.getUTCDate()} 日 · ${wd}`
