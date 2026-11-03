@@ -1,11 +1,10 @@
-name: 每日一条
+name: 每日两条
 
 on:
   schedule:
-    # GitHub 用 UTC。04:30 UTC = 北京时间 12:30
-    # 注意：GitHub 的定时任务常有 5–30 分钟延迟，属正常现象
-    - cron: "30 4 * * *"
-  # 允许在网页上手动点「Run workflow」测试，不用等到第二天
+    # GitHub 用 UTC，+8 是北京时间
+    - cron: "0 1 * * *"    # 北京时间 09:00 —— 正餐（书 / 技能 / 周报）
+    - cron: "0 3 * * *"    # 北京时间 11:00 —— 小菜（bits 栏目）
   workflow_dispatch:
 
 jobs:
@@ -15,14 +14,21 @@ jobs:
       - name: 取出仓库内容
         uses: actions/checkout@v4
 
+      - name: 判断时段
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 3 * * *" ]; then
+            echo "MODE=noon" >> $GITHUB_ENV
+            echo "本次是小菜时段（11:00）"
+          else
+            echo "MODE=daily" >> $GITHUB_ENV
+            echo "本次是正餐时段（09:00）"
+          fi
+
       - name: 推送到手机
         env:
-          # Server酱（推荐）：微信服务号收，免费每天 5 条，无需实名
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
-          # pushplus 备用：需先完成实名认证（¥3.9 或 ¥10 会员）
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           START_DATE: "2026-11-01"
-          MODE: daily
         run: python3 .github/send.py
 
       - name: 失败告警

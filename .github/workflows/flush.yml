@@ -1,0 +1,40 @@
+name: 清库存（一次性）
+
+# 只在 2026-11-04 和 2026-11-05 的 09:00（北京时间）各跑一次，
+# 把这个日期之前写好、还没发的旧稿一次性发完，之后按新的两条节奏继续。
+
+on:
+  schedule:
+    - cron: "0 1 4 11 *"   # 2026-11-04 09:00 北京时间，发前 5 篇
+    - cron: "0 1 5 11 *"   # 2026-11-05 09:00 北京时间，发剩下 4 篇
+  workflow_dispatch:
+
+jobs:
+  flush:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出仓库内容
+        uses: actions/checkout@v4
+
+      - name: 判断第几批
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 1 5 11 *" ]; then
+            echo "BATCH=2" >> $GITHUB_ENV
+          else
+            echo "BATCH=1" >> $GITHUB_ENV
+          fi
+
+      - name: 批量发送
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          BATCH1_N: "5"
+        run: python3 .github/flush.py
+
+      - name: 失败告警
+        if: failure()
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          ALERT_TEXT: "清库存推送失败了。去 Actions 看「清库存（一次性）」。"
+        run: python3 .github/alert.py

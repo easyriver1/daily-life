@@ -36,6 +36,7 @@ COLUMNS = {
     "books": {"dir": "articles/books", "name": "书"},
     "skills": {"dir": "articles/skills", "name": "技能"},
     "weekly": {"dir": "articles/weekly", "name": "周报"},
+    "bits": {"dir": "articles/bits", "name": "小菜"},
 }
 
 # 0=周一 ... 6=周日；周日为 None（不发）
@@ -43,6 +44,18 @@ SCHEDULE = {0: "books", 1: "skills", 2: "books", 3: "skills", 4: "books", 5: "we
 
 # 库存低于这个数就在推送末尾提醒
 LOW_STOCK = 3
+
+# 已经发过的篇数（清库存等一次性发送后，从这里记账，避免重发）
+PROGRESS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "..", "articles", "_progress.json")
+
+
+def load_progress():
+    try:
+        with open(PROGRESS_FILE, encoding="utf-8") as f:
+            return json.load(f).get("done", {})
+    except (IOError, ValueError):
+        return {}
 
 
 def today_beijing():
@@ -171,17 +184,34 @@ def main():
 
     # 两个工作流分工：daily 负责其他六天，weekly 负责周六早上
     mode = os.environ.get("MODE", "")
-    if mode == "daily" and col == "weekly":
+
+    # 11:00 那一条是「小菜」：固定走 bits 栏目，与星期几无关
+    if mode == "noon":
+        col = "bits"
+    elif col == "weekly" and mode == "daily":
         print("周六的周报由 weekly.yml 负责，本次跳过。")
         return
-    if mode == "weekly" and col != "weekly":
+    elif mode == "weekly" and col != "weekly":
         print("今天不是周六，周报工作流跳过。")
         return
 
+    # 清库存期间（flush）暂停常规推送，避免超过 Server酱 每天 5 条
+    flush_dates = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "flush-dates.txt")
+    if os.path.exists(flush_dates):
+        dates = [l.strip() for l in open(flush_dates, encoding="utf-8") if l.strip()]
+        if today.isoformat() in dates:
+            print("今天是批量清库存日，常规推送跳过。")
+            return
+
     files = sorted(glob.glob(os.path.join(COLUMNS[col]["dir"], "*.md")))
-    idx = int(os.environ.get("FORCE_INDEX") or nth_of_column(start, today, col))
+    idx = int(os.environ.get("FORCE_INDEX") or (load_progress().get(col, 0) + nth_of_column(start, today, col)))
 
     print("日期：%s（周%d） 栏目：%s" % (today, today.weekday() + 1, COLUMNS[col]["name"]))
+
+    # 小菜栏目还没写：静默跳过，不发断更提醒
+    if not files and col == "bits":
+        print("小菜栏目还没有内容，本次跳过。")
+        return
 
     # 该栏目还没有稿件
     if not files:
