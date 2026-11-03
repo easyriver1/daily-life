@@ -1,3 +1,7 @@
 # 凭据类文件，永不入库
 *.git-credentials
 .git-credentials
+
+# Python 缓存
+__pycache__/
+*.pyc
