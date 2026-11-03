@@ -90,6 +90,8 @@
   <footer>
     <div id="counter"></div>
     <div id="pwa"></div>
+    <div><a href="#" id="exportread" style="color:#8b9096">导出已读</a></div>
+    <div id="exportbox" style="color:#c9a227;word-break:break-all;margin-top:8px"></div>
     <div>内容源自公开书籍与公开课程，每个数字都可回溯</div>
   </footer>
 </div>
@@ -247,6 +249,23 @@ function openItem(i){
 
 renderTabs();
 renderCol();
+
+/* 导出已读：把本地标记汇总成一行文本，粘给我排期用 */
+document.getElementById('exportread').addEventListener('click', function(e){
+  e.preventDefault();
+  const out = [];
+  Object.keys(DATA.columns).forEach(function(k){
+    DATA.columns[k].forEach(function(a){
+      if (isRead(a.file)) out.push(k + '/' + a.file);
+    });
+  });
+  const text = out.length ? '已读：' + out.join('、') : '已读：（无）';
+  const box = document.getElementById('exportbox');
+  box.textContent = text;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function(){ box.textContent += '（已复制）'; }).catch(function(){});
+  }
+});
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').then(() => {

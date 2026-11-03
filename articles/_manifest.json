@@ -1,0 +1,37 @@
+{
+  "_说明": "整个发布系统的唯一状态源。send.py / flush.py / build_site.py 都读这里，不要再新增状态文件。",
+  "start": "2026-11-01",
+  "columns": {
+    "books":    {"dir": "articles/books",    "name": "书",   "schedule": "周一 / 周三 / 周五"},
+    "skills":   {"dir": "articles/skills",   "name": "常识", "schedule": "周二 / 周四"},
+    "weekly":   {"dir": "articles/weekly",   "name": "周报", "schedule": "周六"},
+    "longform": {"dir": "articles/longform", "name": "长文", "schedule": "按需更新"},
+    "bits":     {"dir": "articles/bits",     "name": "小菜", "schedule": "每天 11:00"}
+  },
+  "schedule": {
+    "0": "books",
+    "1": "skills",
+    "2": "books",
+    "3": "skills",
+    "4": "books",
+    "5": "weekly"
+  },
+  "done": {
+    "books": 2,
+    "skills": 0,
+    "weekly": 1,
+    "longform": 0,
+    "bits": 0
+  },
+  "_done说明": "只统计「绕过排期发出」的篇数（清库存批次）。按排期正常发出的由日期推算，不要重复记。",
+  "flush": {
+    "dates": ["2026-11-04"],
+    "queue": [
+      "articles/books/002-hl-睡够七小时.md",
+      "articles/books/003-hl-零碎用力.md",
+      "articles/weekly/001-第1期.md"
+    ],
+    "perRun": 5
+  },
+  "_flush说明": "dates 里的日子只跑批量发送，常规推送自动让路。queue 清空后这段可以删掉。"
+}

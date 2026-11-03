@@ -1,0 +1,23 @@
+name: 排期测试
+
+# 每次推送代码都跑一遍排期逻辑的单元测试。
+# 目的：改 send.py 或 _manifest.json 时，如果排期算错了，这里会直接红。
+
+on:
+  push:
+    paths:
+      - ".github/send.py"
+      - "articles/_manifest.json"
+      - "tests/**"
+      - "web/build_site.py"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出仓库内容
+        uses: actions/checkout@v4
+
+      - name: 跑测试
+        run: python3 -m unittest discover -s tests -v

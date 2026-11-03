@@ -1,3 +1,0 @@
-articles/books/002-hl-睡够七小时.md
-articles/books/003-hl-零碎用力.md
-articles/weekly/001-第1期.md

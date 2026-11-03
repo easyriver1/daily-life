@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""把 articles/{books,skills,weekly}/*.md 编译成一个多栏目的静态 PWA 站点。
+"""把 articles/<栏目>/*.md 编译成一个多栏目的静态 PWA 站点。
 
+规则：
+  - 栏目定义、名称、排期全部来自 articles/_manifest.json（唯一状态源）
+  - 没有内容的栏目自动隐藏，不会出现空标签
+  - 文章里带 <!-- noindex --> 标记的（有版权的内容）不上站点，只在微信推送
 产物：docs/index.html —— 全部文章内嵌为 JSON，前端按排期挑当天那篇。
-docs/ 同时是 GitHub Pages 的发布目录。
 """
 import glob
 import io
@@ -16,20 +19,14 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(ROOT)
 ARTICLES = os.path.join(REPO, "articles")
 SITE = os.path.join(REPO, "docs")
+MANIFEST = os.path.join(ARTICLES, "_manifest.json")
 
-START_DATE = "2026-11-01"
+HIDDEN_MARK = "<!-- noindex -->"
 
-# 栏目定义：key, 显示名, 排期说明
-COLUMNS = [
-    ("books", "书", "周一 / 周三 / 周五"),
-    ("skills", "常识", "周二 / 周四"),
-    ("weekly", "周报", "周六"),
-    ("longform", "长文", "按需更新 · 不占排期"),
-    ("bits", "小菜", "每天 11:00 · 200-300 字"),
-]
 
-# 0=周一 … 6=周日；None = 不发
-SCHEDULE = ["books", "skills", "books", "skills", "books", "weekly", None]
+def load_manifest():
+    with io.open(MANIFEST, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def parse_article(path):
@@ -59,21 +56,32 @@ def parse_article(path):
 
 
 def main():
+    data_in = load_manifest()
     columns = {}
-    total = 0
-    for key, name, desc in COLUMNS:
-        files = sorted(glob.glob(os.path.join(ARTICLES, key, "*.md")))
-        columns[key] = [parse_article(f) for f in files]
-        total += len(files)
+    meta = {}
 
-    if total == 0:
-        raise SystemExit("articles/ 下没有任何 .md 文件")
+    for key, conf in data_in["columns"].items():
+        files = sorted(glob.glob(os.path.join(ARTICLES, key, "*.md")))
+        arts = []
+        for f in files:
+            raw = io.open(f, encoding="utf-8").read()
+            if HIDDEN_MARK in raw:
+                print("  跳过（有版权，不上站点）：%s" % os.path.basename(f))
+                continue
+            arts.append(parse_article(f))
+        if not arts:
+            continue  # 空栏目直接隐藏
+        columns[key] = arts
+        meta[key] = {"name": conf["name"], "desc": conf.get("schedule", "")}
+
+    if not columns:
+        raise SystemExit("articles/ 下没有任何可发布的 .md 文件")
 
     data = {
-        "start": START_DATE,
-        "schedule": SCHEDULE,
+        "start": data_in["start"],
+        "schedule": [data_in["schedule"].get(str(i)) for i in range(7)],
         "columns": columns,
-        "meta": {k: {"name": n, "desc": d} for k, n, d in COLUMNS},
+        "meta": meta,
     }
 
     os.makedirs(SITE, exist_ok=True)
@@ -83,14 +91,13 @@ def main():
             shutil.copy2(src, os.path.join(SITE, name))
 
     tpl = io.open(os.path.join(ROOT, "template.html"), encoding="utf-8").read()
-    out = (
-        tpl.replace("__DATA__", json.dumps(data, ensure_ascii=False))
-        .replace("__START_DATE__", START_DATE)
-    )
+    out = tpl.replace("__DATA__", json.dumps(data, ensure_ascii=False))
     io.open(os.path.join(SITE, "index.html"), "w", encoding="utf-8").write(out)
-    print("文章 %d 篇 -> %s" % (total, os.path.join(SITE, "index.html")))
-    for key, name, desc in COLUMNS:
-        print("  %s：%d 篇" % (name, len(columns[key])))
+
+    total = sum(len(v) for v in columns.values())
+    print("站点：%d 个栏目 / %d 篇 -> %s" % (len(columns), total, os.path.join(SITE, "index.html")))
+    for k, v in columns.items():
+        print("  %s：%d 篇" % (meta[k]["name"], len(v)))
 
 
 if __name__ == "__main__":

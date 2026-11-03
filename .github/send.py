@@ -30,32 +30,31 @@ import sys
 import urllib.parse
 import urllib.request
 
-DEFAULT_START = "2026-11-01"
+# ---- 唯一状态源：articles/_manifest.json ----
+MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "articles", "_manifest.json")
 
-COLUMNS = {
-    "books": {"dir": "articles/books", "name": "书"},
-    "skills": {"dir": "articles/skills", "name": "常识"},
-    "weekly": {"dir": "articles/weekly", "name": "周报"},
-    "bits": {"dir": "articles/bits", "name": "小菜"},
-}
 
-# 0=周一 ... 6=周日；周日为 None（不发）
-SCHEDULE = {0: "books", 1: "skills", 2: "books", 3: "skills", 4: "books", 5: "weekly", 6: None}
+def load_manifest():
+    with open(MANIFEST, encoding="utf-8") as f:
+        return json.load(f)
+
+
+MANIFEST_DATA = load_manifest()
+
+DEFAULT_START = MANIFEST_DATA["start"]
+COLUMNS = MANIFEST_DATA["columns"]
+
+# 0=周一 … 6=周日；没有对应栏目 = 不发
+SCHEDULE = {int(k): v for k, v in MANIFEST_DATA["schedule"].items()}
 
 # 库存低于这个数就在推送末尾提醒
 LOW_STOCK = 3
 
-# 已经发过的篇数（清库存等一次性发送后，从这里记账，避免重发）
-PROGRESS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "..", "articles", "_progress.json")
-
 
 def load_progress():
-    try:
-        with open(PROGRESS_FILE, encoding="utf-8") as f:
-            return json.load(f).get("done", {})
-    except (IOError, ValueError):
-        return {}
+    """已经「绕过排期」发出的篇数（清库存批次）。"""
+    return MANIFEST_DATA.get("done", {})
 
 
 def today_beijing():
@@ -196,12 +195,10 @@ def main():
         return
 
     # 清库存期间（flush）暂停常规推送，避免超过 Server酱 每天 5 条
-    flush_dates = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "flush-dates.txt")
-    if os.path.exists(flush_dates):
-        dates = [l.strip() for l in open(flush_dates, encoding="utf-8") if l.strip()]
-        if today.isoformat() in dates:
-            print("今天是批量清库存日，常规推送跳过。")
-            return
+    flush_dates = MANIFEST_DATA.get("flush", {}).get("dates", [])
+    if today.isoformat() in flush_dates:
+        print("今天是批量清库存日，常规推送跳过。")
+        return
 
     files = sorted(glob.glob(os.path.join(COLUMNS[col]["dir"], "*.md")))
     idx = int(os.environ.get("FORCE_INDEX") or (load_progress().get(col, 0) + nth_of_column(start, today, col)))

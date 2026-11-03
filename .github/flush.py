@@ -16,16 +16,14 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from send import parse_article, to_markdown, send_serverchan, send_pushplus  # noqa: E402
-
-LIST = os.path.join(HERE, "..", "flush-list.txt")
+from send import parse_article, to_markdown, send_serverchan, send_pushplus, MANIFEST_DATA  # noqa: E402
 
 
 def main():
     batch = os.environ.get("BATCH", "1")
-    n1 = int(os.environ.get("BATCH1_N", "5"))
+    n1 = int(os.environ.get("BATCH1_N", str(MANIFEST_DATA.get("flush", {}).get("perRun", 5))))
 
-    paths = [l.strip() for l in open(LIST, encoding="utf-8") if l.strip()]
+    paths = MANIFEST_DATA.get("flush", {}).get("queue", [])
     if batch == "2":
         todo = paths[n1:]
     else:
