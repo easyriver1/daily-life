@@ -1,7 +1,3 @@
 articles/books/002-hl-睡够七小时.md
 articles/books/003-hl-零碎用力.md
-articles/skills/002-cli-路径.md
-articles/skills/003-cli-文件操作.md
-articles/skills/004-cli-管道.md
-articles/skills/005-git-版本控制.md
 articles/weekly/001-第1期.md

@@ -34,7 +34,7 @@ DEFAULT_START = "2026-11-01"
 
 COLUMNS = {
     "books": {"dir": "articles/books", "name": "书"},
-    "skills": {"dir": "articles/skills", "name": "技能"},
+    "skills": {"dir": "articles/skills", "name": "常识"},
     "weekly": {"dir": "articles/weekly", "name": "周报"},
     "bits": {"dir": "articles/bits", "name": "小菜"},
 }
