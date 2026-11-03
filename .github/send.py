@@ -201,7 +201,18 @@ def main():
         return
 
     files = sorted(glob.glob(os.path.join(COLUMNS[col]["dir"], "*.md")))
-    idx = int(os.environ.get("FORCE_INDEX") or (load_progress().get(col, 0) + nth_of_column(start, today, col)))
+
+    if col == "bits":
+        # 小菜不参与星期排期：从 bits_start 那天起，每天中午往前推一篇
+        bits_start = datetime.date.fromisoformat(
+            MANIFEST_DATA.get("bits_start", DEFAULT_START))
+        idx = int(os.environ.get("FORCE_INDEX") or ((today - bits_start).days + 1))
+        if idx < 1:
+            print("小菜还没到开始日期，跳过。")
+            return
+    else:
+        idx = int(os.environ.get("FORCE_INDEX")
+                  or (load_progress().get(col, 0) + nth_of_column(start, today, col)))
 
     print("日期：%s（周%d） 栏目：%s" % (today, today.weekday() + 1, COLUMNS[col]["name"]))
 
@@ -219,6 +230,9 @@ def main():
 
     # 稿件用完了：不发旧文，改发一条预警，避免静默重复
     if idx > len(files):
+        if col == "bits":
+            print("小菜库存用完了，静默跳过（不打扰）。")
+            return
         deliver("【断更】%s栏目稿件已用完" % COLUMNS[col]["name"],
                 "今天的「%s」栏目已经没有新稿了（共 %d 篇，已发到第 %d 篇）。\n\n"
                 "补稿后会自动恢复。" % (COLUMNS[col]["name"], len(files), len(files)),

@@ -89,13 +89,18 @@ class TestIndex(unittest.TestCase):
         idx = done.get("skills", 0) + send.nth_of_column(start_d, D("2026-11-05"), "skills")
         self.assertEqual(idx, 2)
 
-    def test_books_after_flush(self):
-        # 清库存会发掉 books 002/003，done.books 记 2；
-        # 11-06 是第三个书日，idx 应为 5 —— 已经超出 3 篇，应报「用完」
+    def test_books_index_without_flush(self):
+        # 2026-11-03 取消了清库存，done 全为 0：
+        # 11-06 是第三个书日，idx 应为 3（正好第 3 篇，不跳篇不重复）
         start_d = D(send.MANIFEST_DATA["start"])
         done = send.load_progress()
         idx = done.get("books", 0) + send.nth_of_column(start_d, D("2026-11-06"), "books")
-        self.assertEqual(idx, 5)
+        self.assertEqual(idx, 3)
+
+    def test_bits_index_from_bits_start(self):
+        bits_start = D(send.MANIFEST_DATA.get("bits_start", send.MANIFEST_DATA["start"]))
+        self.assertEqual((D("2026-11-04") - bits_start).days + 1, 1)
+        self.assertEqual((D("2026-11-05") - bits_start).days + 1, 2)
 
 
 if __name__ == "__main__":

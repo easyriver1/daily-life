@@ -1,37 +1,50 @@
 name: 长文上线通知
 
+# 三篇长文各推一次短通知（10:00，避开 09:00 正餐与 11:00 小菜）。
+# 正文在网页版「长文」栏目，微信只发提醒，保证每天不超过 Server酱 的 5 条上限。
+
 on:
-  push:
-    paths:
-      - "articles/longform/**"
+  schedule:
+    - cron: "0 2 5 11 *"   # 2026-11-05 10:00 北京时间，第 1 篇
+    - cron: "0 2 7 11 *"   # 2026-11-07 10:00，第 2 篇
+    - cron: "0 2 9 11 *"   # 2026-11-09 10:00，第 3 篇
   workflow_dispatch:
+    inputs:
+      index:
+        description: "发第几篇长文"
+        default: "1"
 
 jobs:
-  notify:
+  announce:
     runs-on: ubuntu-latest
     steps:
       - name: 取出仓库内容
         uses: actions/checkout@v4
 
-      - name: 取最新一篇长文的标题
+      - name: 判断发第几篇
         run: |
-          FILE=$(ls -t articles/longform/*.md | head -n1)
-          TITLE=$(head -n1 "$FILE" | sed 's/^# *//')
-          echo "LF_TITLE=$TITLE" >> $GITHUB_ENV
-          echo "标题：$TITLE"
+          S="${{ github.event.schedule }}"
+          if [ "$S" = "0 2 7 11 *" ]; then
+            echo "INDEX=2" >> $GITHUB_ENV
+          elif [ "$S" = "0 2 9 11 *" ]; then
+            echo "INDEX=3" >> $GITHUB_ENV
+          elif [ -n "${{ github.event.inputs.index }}" ]; then
+            echo "INDEX=${{ github.event.inputs.index }}" >> $GITHUB_ENV
+          else
+            echo "INDEX=1" >> $GITHUB_ENV
+          fi
 
-      - name: 推一条上线提醒
+      - name: 发提醒
         env:
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           LF_URL: "https://easyriver1.github.io/daily-life/"
-          LF_SUMMARY: "正文在网页版「长文」栏目，手机打开即可读。"
-        run: python3 .github/notify_longform.py
+        run: python3 .github/announce.py
 
       - name: 失败告警
         if: failure()
         env:
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          ALERT_TEXT: "长文上线通知发失败了。去 Actions 页面看「长文上线通知」。"
+          ALERT_TEXT: "长文上线通知发失败了。去 Actions 看「长文上线通知」。"
         run: python3 .github/alert.py
