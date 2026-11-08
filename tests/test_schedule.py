@@ -98,9 +98,11 @@ class TestIndex(unittest.TestCase):
         self.assertEqual(idx, 3)
 
     def test_bits_index_from_bits_start(self):
+        # 小菜序号 = done.bits（之前已发）+ 从 bits_start 起的天数
         bits_start = D(send.MANIFEST_DATA.get("bits_start", send.MANIFEST_DATA["start"]))
-        self.assertEqual((D("2026-11-04") - bits_start).days + 1, 1)
-        self.assertEqual((D("2026-11-05") - bits_start).days + 1, 2)
+        done = send.load_progress().get("bits", 0)
+        self.assertEqual(done + (D("2026-11-09") - bits_start).days + 1, 3)
+        self.assertEqual(done + (D("2026-11-10") - bits_start).days + 1, 4)
 
 
 if __name__ == "__main__":

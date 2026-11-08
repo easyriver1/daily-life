@@ -203,10 +203,12 @@ def main():
     files = sorted(glob.glob(os.path.join(COLUMNS[col]["dir"], "*.md")))
 
     if col == "bits":
-        # 小菜不参与星期排期：从 bits_start 那天起，每天中午往前推一篇
+        # 小菜不参与星期排期：从 bits_start 那天起，每天中午往前推一篇；
+        # 再加上 done.bits（之前已发、但不在当前计数窗口里的篇数）
         bits_start = datetime.date.fromisoformat(
             MANIFEST_DATA.get("bits_start", DEFAULT_START))
-        idx = int(os.environ.get("FORCE_INDEX") or ((today - bits_start).days + 1))
+        idx = int(os.environ.get("FORCE_INDEX")
+                  or (load_progress().get("bits", 0) + (today - bits_start).days + 1))
         if idx < 1:
             print("小菜还没到开始日期，跳过。")
             return
