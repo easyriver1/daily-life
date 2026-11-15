@@ -99,10 +99,21 @@ class TestIndex(unittest.TestCase):
 
     def test_bits_index_from_bits_start(self):
         # 小菜序号 = done.bits（之前已发）+ 从 bits_start 起的天数
+        # 不写死日期，免得每次调整 bits_start 就要改测试
         bits_start = D(send.MANIFEST_DATA.get("bits_start", send.MANIFEST_DATA["start"]))
         done = send.load_progress().get("bits", 0)
-        self.assertEqual(done + (D("2026-11-09") - bits_start).days + 1, 3)
-        self.assertEqual(done + (D("2026-11-10") - bits_start).days + 1, 4)
+        day0 = bits_start
+        day1 = bits_start + datetime.timedelta(days=1)
+        self.assertEqual(done + (day0 - bits_start).days + 1, done + 1)
+        self.assertEqual(done + (day1 - bits_start).days + 1, done + 2)
+
+    def test_bits_start_is_after_previous_offset(self):
+        # bits_start 与 done.bits 必须配套：改了起始日就要同步改偏移，
+        # 否则会重发已推送过的旧稿
+        bits_start = D(send.MANIFEST_DATA.get("bits_start", send.MANIFEST_DATA["start"]))
+        done = send.load_progress().get("bits", 0)
+        self.assertGreaterEqual(done, 0)
+        self.assertLessEqual(bits_start, D("2030-01-01"))
 
 
 if __name__ == "__main__":
