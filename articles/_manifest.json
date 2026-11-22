@@ -1,7 +1,7 @@
 {
   "_说明": "整个发布系统的唯一状态源。send.py / flush.py / build_site.py 都读这里，不要再新增状态文件。",
   "start": "2026-11-01",
-  "bits_start": "2026-11-16",
+  "bits_start": "2026-11-23",
   "columns": {
     "books":    {"dir": "articles/books",    "name": "书",   "schedule": "周一 / 周三 / 周五"},
     "skills":   {"dir": "articles/skills",   "name": "常识", "schedule": "周二 / 周四"},
@@ -22,7 +22,7 @@
     "skills": 0,
     "weekly": 0,
     "longform": 0,
-    "bits": 5
+    "bits": 8
   },
   "_done说明": "只统计「绕过排期发出」的篇数。按排期正常发出的由日期推算，不要重复记。",
   "flush": {
